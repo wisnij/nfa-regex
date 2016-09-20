@@ -146,7 +146,7 @@ sub add_accept
 }
 
 
-=item B<add_goto>( I<ADDRESS> )
+=item B<add_goto>( $I<ADDRESS> )
 
 Add a C<goto> instruction which will jump to the given I<ADDRESS>.
 

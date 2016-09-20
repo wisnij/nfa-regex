@@ -181,6 +181,7 @@ sub _parse_class
             else
             {
                 my ($to, $escaped) = _get_char( $scan );
+                die "Invalid character range $from-$to" if $to lt $from;
                 push @ranges, [$from, $to];
             }
         }

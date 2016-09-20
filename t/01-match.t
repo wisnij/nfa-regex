@@ -102,8 +102,14 @@ sub test
     my ($n, $pattern, $input, $expected, %options) = @_;
     note "test $n: /$pattern/ =~ '$input'";
 
-    my $regex = Regex->new( $pattern );
-    die "test $n: error expected but none thrown" if not $expected;
+    my $regex = eval { Regex->new( $pattern ) };
+    if( $@ )
+    {
+        die if $expected;
+        pass "threw error: $@";
+        return;
+    }
+
     isa_ok $regex, 'Regex', "/$pattern/";
 
     my ($matched, @groups) = $regex->match( $input );
@@ -135,7 +141,7 @@ for my $i ( 0 .. $#$tests )
             if( $@ )
             {
                 diag "caught error: $@";
-                fail 'eval test' if $expected;
+                fail 'eval test';
             }
         };
     }

@@ -35,12 +35,16 @@ sub parse
 
     while( not $scan->done() )
     {
-        my $next = $scan->peek();
+        my ($next, $escaped) = _get_char( $scan );
 
-        if( $next eq '+' or $next eq '*' or $next eq '?' )
+        if( $escaped )
+        {
+            # Escaped metacharacter
+            $state->add_literal( $next );
+        }
+        elsif( $next eq '+' or $next eq '*' or $next eq '?' )
         {
             # Repetition operator
-            $scan->advance();
             my $greedy = 1;
             if( $scan->peek() eq '?' )
             {
@@ -53,13 +57,10 @@ sub parse
         elsif( $next eq '|' )
         {
             # Alternation
-            $scan->advance();
             $state->add_alt();
         }
         elsif( $next eq '(' )
         {
-            $scan->advance();
-
             my $capturing = 1;
             if( $scan->peek(0, 2) eq '?:' )
             {
@@ -71,23 +72,20 @@ sub parse
         }
         elsif( $next eq ')' )
         {
-            $scan->advance();
             $state->add_close_paren();
         }
         elsif( $next eq '.' )
         {
-            $scan->advance();
             $state->add_any();
         }
         elsif( $next eq '[' )
         {
-            $scan->advance();
-            _parse_class( $scan, $state );
+            my ($negated, @ranges) = _parse_class( $scan );
+            $state->add_class( $negated, @ranges );
         }
         else
         {
             # Literal character
-            $scan->advance();
             $state->add_literal( $next );
         }
     }
@@ -96,9 +94,31 @@ sub parse
 }
 
 
+sub _get_char
+{
+    my ($scan) = @_;
+    my $escaped = 0;
+
+    if( $scan->peek() eq '\\' )
+    {
+        $scan->advance();
+
+        # a trailing backslash is literal
+        return ('\\', 0) if $scan->done();
+
+        $escaped = 1;
+    }
+
+    my $char = $scan->peek();
+    $scan->advance();
+
+    return ($char, $escaped);
+}
+
+
 sub _parse_class
 {
-    my ($scan, $state) = @_;
+    my ($scan) = @_;
 
     my $negated = 0;
     if( $scan->peek() eq '^' )
@@ -110,10 +130,9 @@ sub _parse_class
     my (@ranges, $finished);
     while( not $scan->done() )
     {
-        my $next = $scan->peek();
-        $scan->advance();
+        my ($next, $escaped) = _get_char( $scan );
 
-        if( $next eq ']' )
+        if( $next eq ']' and not $escaped )
         {
             $finished = 1;
             last;
@@ -129,9 +148,7 @@ sub _parse_class
             $scan->advance();
 
             my $from = $next;
-            my $to   = $scan->peek();
-
-            if( $to eq ']' )
+            if( $scan->peek() eq ']' )
             {
                 # end of the class, so dash is a literal
                 push @ranges, $from;
@@ -139,7 +156,7 @@ sub _parse_class
             }
             else
             {
-                $scan->advance();
+                my ($to, $escaped) = _get_char( $scan );
                 push @ranges, [$from, $to];
             }
         }
@@ -152,7 +169,7 @@ sub _parse_class
     die "Empty bracketed character class"
         if not @ranges;
 
-    $state->add_class( $negated, @ranges );
+    return ($negated, @ranges);
 }
 
 

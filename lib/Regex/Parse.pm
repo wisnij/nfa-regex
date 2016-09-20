@@ -28,6 +28,19 @@ my $classes = {
     xdigit => [ ['0','9'], ['A','F'], ['a','f'] ],
 };
 
+my $escapes = {
+    d => [0, $classes->{digit}],
+    w => [0, $classes->{word}],
+    s => [0, $classes->{space}],
+    a => "\a",
+    e => "\e",
+    f => "\f",
+    n => "\n",
+    r => "\r",
+    t => "\t",
+    v => "\x0B",
+};
+
 
 =head1 FUNCTIONS
 
@@ -55,8 +68,17 @@ sub parse
 
         if( $escaped )
         {
-            # Escaped metacharacter
-            $state->add_literal( $next );
+            if( ref $next eq 'ARRAY' )
+            {
+                # A backslashed class, like \d
+                my ($negated, $ranges) = @$next;
+                $state->add_class( $negated, @$ranges );
+            }
+            else
+            {
+                # A single character, like \[ or \n
+                $state->add_literal( $next );
+            }
         }
         elsif( $next eq '+' or $next eq '*' or $next eq '?' )
         {
@@ -128,7 +150,19 @@ sub _get_char
     my $char = $scan->peek();
     $scan->advance();
 
-    return ($char, $escaped);
+    my $value = $escaped ? $escapes->{$char} : $char;
+    if( $escaped and not defined $value )
+    {
+        # letter backslashes have to mean something
+        die "Unrecognized escape sequence '\\$char'"
+            if $char =~ /[[:alpha:]]/;
+
+        # any punctuation can be escaped even if not a metacharacter
+        $value = $char;
+    }
+
+    return $value if not wantarray;
+    return ($value, $escaped, $char);
 }
 
 
@@ -146,6 +180,7 @@ sub _parse_class
     my (@ranges, $finished);
     while( not $scan->done() )
     {
+        # check for the start of a posix class
         if( $scan->peek(0, 2) eq '[:' )
         {
             $scan->advance(2);
@@ -154,6 +189,7 @@ sub _parse_class
             next;
         }
 
+        # otherwise, this is a literal, either on its own or the stat of a range
         my ($next, $escaped) = _get_char( $scan );
 
         if( $next eq ']' and not $escaped )
@@ -164,8 +200,8 @@ sub _parse_class
 
         if( $scan->peek() ne '-' )
         {
-            # not the start of a range, so just add a single char
-            push @ranges, $next;
+            # not the start of a range, so just add a single char/class
+            push @ranges, (ref $next ? @$next : $next);
         }
         else
         {
@@ -175,12 +211,13 @@ sub _parse_class
             if( $scan->peek() eq ']' )
             {
                 # end of the class, so dash is a literal
-                push @ranges, $from;
+                push @ranges, (ref $from ? @$from : $from);
                 push @ranges, '-';
             }
             else
             {
-                my ($to, $escaped) = _get_char( $scan );
+                my $to = _get_char( $scan );
+                die "Invalid escape character in range" if ref $from or ref $to;
                 die "Invalid character range $from-$to" if $to lt $from;
                 push @ranges, [$from, $to];
             }

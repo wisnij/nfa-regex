@@ -189,7 +189,7 @@ sub _parse_class
             next;
         }
 
-        # otherwise, this is a literal, either on its own or the stat of a range
+        # otherwise, this is a literal, either on its own or the start of a range
         my ($next, $escaped) = _get_char( $scan );
 
         if( $next eq ']' and not $escaped )

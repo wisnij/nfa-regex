@@ -117,6 +117,22 @@ sub add_any
 }
 
 
+=item B<add_range>( $I<NEGATED>, $I<RANGE_STRING> )
+
+Add a C<range> instruction which matches (or not, if I<NEGATED>) the given
+I<RANGE_STRING>.
+
+=cut
+
+sub add_range
+{
+    my ($self, $neg, $ranges) = @_;
+    die "range string '$ranges' is not of even length!"
+        if length( $ranges ) % 2 != 0;
+    return $self->_push( 'range', $neg, $ranges );
+}
+
+
 =item B<add_accept>()
 
 Add an C<accept> instruction which causes the program to end successfully.

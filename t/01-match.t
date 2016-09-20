@@ -35,10 +35,10 @@ my $tests = [
     [ '^a$',              'bab',              undef, todo => 1 ],
 
     # character classes
-    [ '[abc]',            'a',                [ [0,1] ], todo => 1 ],
-    [ '[abc]',            'z',                undef, todo => 1 ],
-    [ '[^abc]',           'z',                [ [0,1] ], todo => 1 ],
-    [ '[^abc]',           'a',                undef, todo => 1 ],
+    [ '[abc]',            'a',                [ [0,1] ] ],
+    [ '[abc]',            'z',                undef ],
+    [ '[^abc]',           'z',                [ [0,1] ] ],
+    [ '[^abc]',           'a',                undef ],
     [ '[a-z]',            'a',                [ [0,1] ], todo => 1 ],
     [ '[a-z]',            '0',                undef, todo => 1 ],
     [ '[^a-z]',           '0',                [ [0,1] ], todo => 1 ],

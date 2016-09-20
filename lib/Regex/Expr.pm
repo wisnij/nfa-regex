@@ -13,6 +13,7 @@ use warnings;
 use Regex::Expr::Alt;
 use Regex::Expr::Any;
 use Regex::Expr::Concat;
+use Regex::Expr::Class;
 use Regex::Expr::Empty;
 use Regex::Expr::Group;
 use Regex::Expr::Literal;

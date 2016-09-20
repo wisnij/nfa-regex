@@ -86,6 +86,25 @@ sub execute
                 $self->_add_thread( $new_threads, $addr + 1, $thread )
                     if $char ne '';
             }
+            elsif( $code eq 'range' )
+            {
+                next THREAD if $char eq '';
+
+                my ($negated, $chars) = $op->args();
+                my $success = 0;
+
+                my @chars = split //, $chars;
+                for( my $i = 0; $i < $#chars; $i += 2 )
+                {
+                    $success = 1, last
+                        if  $char ge $chars[$i]
+                        and $char le $chars[$i + 1];
+                }
+
+                $success = not $success if $negated;
+                $self->_add_thread( $new_threads, $addr + 1, $thread )
+                    if $success;
+            }
             elsif( $code eq 'accept' )
             {
                 # We have a winner! Save the current best match and move on.

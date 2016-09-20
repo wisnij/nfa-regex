@@ -79,6 +79,11 @@ sub parse
             $scan->advance();
             $state->add_any();
         }
+        elsif( $next eq '[' )
+        {
+            $scan->advance();
+            _parse_class( $scan, $state );
+        }
         else
         {
             # Literal character
@@ -88,6 +93,42 @@ sub parse
     }
 
     return $state->finish();
+}
+
+
+sub _parse_class
+{
+    my ($scan, $state) = @_;
+
+    my $negated = 0;
+    if( $scan->peek() eq '^' )
+    {
+        $negated = 1;
+        $scan->advance();
+    }
+
+    my (@ranges, $finished);
+    while( not $scan->done() )
+    {
+        my $next = $scan->peek();
+        if( $next eq ']' )
+        {
+            $finished = 1;
+            $scan->advance();
+            last;
+        }
+
+        $scan->advance();
+        push @ranges, $next;
+    }
+
+    die "Unmatched [ in pattern"
+        if not $finished;
+
+    die "Empty bracketed character class"
+        if not @ranges;
+
+    $state->add_class( $negated, @ranges );
 }
 
 

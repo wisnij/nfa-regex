@@ -141,6 +141,20 @@ sub add_any
 }
 
 
+=item B<add_class>( $I<NEGATED>, @I<RANGES> )
+
+Add a character class to the stack.
+
+=cut
+
+sub add_class
+{
+    my ($self, $negated, @ranges) = @_;
+    my $expr = Regex::Expr::Class->new( $negated, @ranges );
+    $self->_push( $expr );
+}
+
+
 # Concatenate multiple elements from the top of the stack to the first mark
 # (alternate, open paren, or bottom of the stack) in preparation for a new mark
 # to be added.

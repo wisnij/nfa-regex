@@ -24,7 +24,7 @@ sub range_string
         my $str = '';
         for my $range ( @{ $self->{ranges} } )
         {
-            if( eval { $range->isa( 'ARRAY' ) } )
+            if( ref $range eq 'ARRAY' )
             {
                 # an actual range; append the lower and upper bounds as a pair
                 my ($l, $u) = @$range;

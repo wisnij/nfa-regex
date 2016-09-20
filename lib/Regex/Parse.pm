@@ -111,15 +111,39 @@ sub _parse_class
     while( not $scan->done() )
     {
         my $next = $scan->peek();
+        $scan->advance();
+
         if( $next eq ']' )
         {
             $finished = 1;
-            $scan->advance();
             last;
         }
 
-        $scan->advance();
-        push @ranges, $next;
+        if( $scan->peek() ne '-' )
+        {
+            # not the start of a range, so just add a single char
+            push @ranges, $next;
+        }
+        else
+        {
+            $scan->advance();
+
+            my $from = $next;
+            my $to   = $scan->peek();
+
+            if( $to eq ']' )
+            {
+                # end of the class, so dash is a literal
+                push @ranges, $from;
+                push @ranges, '-';
+            }
+            else
+            {
+                $scan->advance();
+                push @ranges, [$from, $to];
+            }
+        }
+
     }
 
     die "Unmatched [ in pattern"

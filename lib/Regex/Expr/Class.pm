@@ -48,9 +48,9 @@ sub range_string
 sub as_string
 {
     my ($self) = @_;
-    return sprintf( 'Class%s(%s)',
-                    ($self->{negated} ? 'Not' : ''),
-                    $self->range_string() );
+    my $rs = $self->range_string();
+    $rs =~ s/([^ -~])/sprintf '\\x%02X', ord $1/eg;
+    return sprintf( 'Class%s(%s)', ($self->{negated} ? 'Not' : ''), $rs );
 }
 
 

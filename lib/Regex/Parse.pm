@@ -12,6 +12,22 @@ use warnings;
 use Regex::Parse::State;
 use Regex::Scanner;
 
+my $classes = {
+    alpha  => [ ['A','Z'], ['a','z'] ],
+    alnum  => [ ['0','9'], ['A','Z'], ['a','z'] ],
+    blank  => [ ' ', "\t" ],
+    cntrl  => [ ["\x00","\x1F"], "\x7F" ],
+    digit  => [ ['0','9'] ],
+    graph  => [ ['!','~'] ],
+    lower  => [ ['a','z'] ],
+    print  => [ [' ','~'] ],
+    punct  => [ ['!','/'], [':','@'], ['[','`'], ['{','~'] ],
+    space  => [ ["\t","\r"], " "],
+    upper  => [ ['A','Z'] ],
+    word   => [ ['0','9'], ['A','Z'],'_', ['a','z'] ],
+    xdigit => [ ['0','9'], ['A','F'], ['a','f'] ],
+};
+
 
 =head1 FUNCTIONS
 
@@ -130,6 +146,14 @@ sub _parse_class
     my (@ranges, $finished);
     while( not $scan->done() )
     {
+        if( $scan->peek(0, 2) eq '[:' )
+        {
+            $scan->advance(2);
+            my $class = _parse_posix_class( $scan );
+            push @ranges, @$class;
+            next;
+        }
+
         my ($next, $escaped) = _get_char( $scan );
 
         if( $next eq ']' and not $escaped )
@@ -170,6 +194,28 @@ sub _parse_class
         if not @ranges;
 
     return ($negated, @ranges);
+}
+
+
+sub _parse_posix_class
+{
+    my ($scan) = @_;
+
+    my $name = '';
+    $name .= $scan->peek(), $scan->advance()
+        while not $scan->done()
+        and $scan->peek(0, 2) ne ':]';
+
+    die "Unterminated character class"
+        if $scan->done();
+
+    $scan->advance(2);
+
+    my $class = $classes->{$name};
+    die "Unrecognized character class '$name'"
+        if not defined $class;
+
+    return $class;
 }
 
 
